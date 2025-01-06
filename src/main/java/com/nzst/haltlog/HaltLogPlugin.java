@@ -1,7 +1,10 @@
 package com.nzst.haltlog;
 
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Filter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class HaltLogPlugin extends JavaPlugin {
@@ -14,6 +17,10 @@ public class HaltLogPlugin extends JavaPlugin {
     public void onEnable() {
         getLogger().info("HaltLog Plugin Enabled!");
         getCommand("haltlog").setExecutor(new CommandHandler(this));
+
+        // Set a custom filter to handle log suppression
+        Logger rootLogger = getServer().getLogger();
+        rootLogger.setFilter(new LogFilter());
     }
 
     @Override
@@ -39,8 +46,14 @@ public class HaltLogPlugin extends JavaPlugin {
         }
     }
 
-    public boolean shouldHide(Level level) {
-        if (hideAny) return true;
-        return (hideError && level == Level.SEVERE) || (hideWarn && level == Level.WARNING);
+    private class LogFilter implements Filter {
+        @Override
+        public boolean isLoggable(LogRecord record) {
+            if (hideAny) return false;
+            if (hideError && record.getLevel() == Level.SEVERE) return false;
+            if (hideWarn && record.getLevel() == Level.WARNING) return false;
+
+            return true; // Allow other logs
+        }
     }
 }
